@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>줌세션 - (주)한국FP센터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            word-break: keep-all;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, #1a365d 0%, #2a4365 100%);
+        }
+        
+        /* 모바일 터치 피드백 */
+        .benefit-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .benefit-card:active {
+            transform: scale(0.98);
+        }
+        
+        /* 버튼 터치 영역 확보 - iOS 호환 */
+        button, .btn-touch {
+            min-height: 48px;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            cursor: pointer;
+        }
+        
+        /* iOS input 스타일 리셋 */
+        input, textarea {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            border-radius: 12px;
+        }
+        
+        /* 스크롤 부드럽게 */
+        html {
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* 아코디언 애니메이션 */
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+        }
+        .accordion-content.open {
+            max-height: 3000px;
+        }
+        
+        /* 모바일 카드 텍스트 최적화 */
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 8px;
+        }
+        .card-desc {
+            font-size: 13px;
+            line-height: 1.5;
+            color: #4b5563;
+        }
+        
+        @media (min-width: 768px) {
+            .card-title {
+                font-size: 17px;
+            }
+            .card-desc {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body style="background-color: #f9fafb; color: #111827;">
+
+    <!-- 카카오톡 인앱 브라우저 안내 (폼 열릴 때 표시) -->
+    <div id="kakaoBanner" style="display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 200; background: linear-gradient(135deg, #fee500 0%, #f5d800 100%); padding: 12px 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.15);">
+        <div style="max-width: 500px; margin: 0 auto; text-align: center;">
+            <p style="font-size: 13px; font-weight: 700; color: #3c1e1e; margin-bottom: 6px;">📱 카카오톡에서 입력이 안될 수 있습니다</p>
+            <p id="kakaoGuide" style="font-size: 12px; color: #5c3c3c; line-height: 1.4;"></p>
+            <button type="button" onclick="closeKakaoBanner()" style="margin-top: 8px; background: #3c1e1e; color: #fee500; border: none; padding: 6px 16px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; min-height: 28px;">확인했어요</button>
+        </div>
+    </div>
+
+    <!-- 참석자 버튼 (Floating) -->
+    <button type="button" onclick="openAdminLogin()" style="position: fixed; top: 12px; right: 8px; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 10px; background: rgba(30, 58, 138, 0.9); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-height: 40px; width: 40px; height: 40px; cursor: pointer; -webkit-appearance: none; -webkit-tap-highlight-color: transparent;">
+        <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+    </button>
+
+    <!-- 관리자 로그인 모달 -->
+    <div id="adminModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 16px;">
+        <div style="background: white; border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); width: 100%; max-width: 360px; padding: 24px; position: relative;">
+            <button type="button" onclick="closeAdminLogin()" style="position: absolute; top: 16px; right: 16px; color: #9ca3af; background: none; border: none; min-height: auto; padding: 4px; cursor: pointer; -webkit-tap-highlight-color: transparent;">
+                <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h3 style="font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 24px; text-align: center;">관리자 로그인</h3>
+            <div id="loginForm">
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 4px;">아이디</label>
+                    <input type="text" id="adminId" style="width: 100%; padding: 12px 16px; border: 1px solid #d1d5db; border-radius: 12px; font-size: 16px; outline: none; -webkit-appearance: none;" placeholder="아이디 입력">
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 4px;">비밀번호</label>
+                    <input type="password" id="adminPw" style="width: 100%; padding: 12px 16px; border: 1px solid #d1d5db; border-radius: 12px; font-size: 16px; outline: none; -webkit-appearance: none;" placeholder="비밀번호 입력">
+                </div>
+                <p id="loginError" style="display: none; color: #ef4444; font-size: 14px; margin-top: 8px;">아이디 또는 비밀번호가 올바르지 않습니다.</p>
+                <button type="button" onclick="checkAdminLogin()" style="width: 100%; margin-top: 24px; background: #1e3a8a; color: white; font-weight: 700; padding: 14px 24px; border-radius: 12px; border: none; font-size: 16px; cursor: pointer; -webkit-appearance: none; -webkit-tap-highlight-color: transparent;">
+                    로그인
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- 상단 줌세션 안내 섹션 -->
+    <!-- ============================================ -->
+    <header style="background: linear-gradient(135deg, #1a365d 0%, #2a4365 100%); color: white; padding: 48px 20px; text-align: center;">
+        <div style="max-width: 600px; margin: 0 auto;">
+            <p style="color: #fbbf24; font-weight: 700; letter-spacing: 2px; margin-bottom: 12px; font-size: 12px;">ZOOM SESSION</p>
+            <h1 style="font-size: 24px; font-weight: 900; margin-bottom: 24px; line-height: 1.4;">
+                기업 성장지원컨설팅 노하우<br>
+                <span style="color: #fbbf24;">[줌]</span>세션
+            </h1>
+            
+            <div style="text-align: left; background: rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; margin-bottom: 24px;">
+                <div style="margin-bottom: 20px;">
+                    <p style="font-weight: 700; font-size: 15px; margin-bottom: 6px;">1. (실사례 공유)기업 성장지원 컨설팅</p>
+                    <p style="color: #93c5fd; font-size: 14px; padding-left: 12px;">▶ 연구소설립 및 특허활용 성장전략안</p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <p style="font-weight: 700; font-size: 15px; margin-bottom: 6px;">2. 중소기업 AP전략안 공유</p>
+                    <p style="color: #93c5fd; font-size: 14px; padding-left: 12px;">▶ 전국 400만 중소기업</p>
+                    <p style="color: #93c5fd; font-size: 14px; padding-left: 12px;">▶ 전국 8만여개 연구소 보유기업</p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <p style="font-weight: 700; font-size: 15px; margin-bottom: 6px;">3. 신설법인 AP전략안</p>
+                    <p style="color: #93c5fd; font-size: 14px; padding-left: 12px;">▶ 매년 12만개씩 생기는 신설법인 AP전략</p>
+                </div>
+                <div>
+                    <p style="font-weight: 700; font-size: 15px; margin-bottom: 6px;">4. 현금흐름 파이프라인 구축전략</p>
+                    <p style="color: #93c5fd; font-size: 14px; padding-left: 12px;">▶ 마르지 않는 연금성 소득재원 마련 전략안</p>
+                </div>
+            </div>
+            
+            <div style="background: #fbbf24; color: #1a365d; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                <p style="font-weight: 900; font-size: 15px; margin-bottom: 12px;">* 진행일시 (70분, 택1)</p>
+                <p style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">1차: 1/20(화) 10:30am</p>
+                <p style="font-size: 16px; font-weight: 700;">2차: 1/21(수) 10:30am</p>
+            </div>
+            
+            <div style="background: rgba(255,255,255,0.15); border-radius: 12px; padding: 16px; margin-bottom: 8px;">
+                <p style="font-size: 15px; margin-bottom: 8px;">☎ <strong>박신제 본부장</strong> 010-5244-1467</p>
+                <p style="color: #93c5fd; font-size: 13px;">&lt;신청하신 분께 개별 안내 드립니다.&gt;</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main style="max-width: 800px; margin: 0 auto; padding: 0 16px 48px;">
+        
+        <!-- 줌세션 신청 CTA -->
+        <section style="margin-top: -24px; background: linear-gradient(135deg, #1f2937 0%, #111827 100%); border-radius: 20px; padding: 32px 20px; text-align: center; color: white; position: relative; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <div style="position: relative; z-index: 10;">
+                <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 12px; line-height: 1.4;">지금 바로 당신의 커리어를<br>업그레이드 하세요.</h2>
+                <p style="color: #9ca3af; margin-bottom: 24px; font-size: 14px;">성공은 준비된 자에게 오는 것이 아니라,<br>행동하는 자에게 찾아옵니다.</p>
+                
+                <!-- 신청 버튼 -->
+                <div id="applyBtnWrap">
+                    <button type="button" onclick="toggleApplyForm()" style="width: 100%; max-width: 320px; background: #eab308; color: #111827; font-weight: 700; padding: 16px 24px; border-radius: 9999px; border: none; font-size: 16px; box-shadow: 0 4px 12px rgba(234,179,8,0.4); display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; -webkit-appearance: none; -webkit-tap-highlight-color: transparent;">
+                        <span>줌세션 신청하기</span>
+                        <svg id="applyArrow" style="width: 20px; height: 20px; transition: transform 0.3s;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                </div>
+
+                <!-- 신청 폼 (숨김) -->
+                <div id="applyForm" style="display: none; max-width: 400px; margin: 24px auto 0; background: white; border-radius: 16px; padding: 24px; text-align: left;">
+                    <h3 style="font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 20px; text-align: center;">줌세션 참가 신청</h3>
+                    
+                    <!-- 성명 -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 4px;">성명 <span style="color: #ef4444;">*</span></label>
+                        <input type="text" id="formName" style="width: 100%; padding: 14px 16px; border: 1px solid #d1d5db; border-radius: 12px; font-size: 16px; color: #111827; outline: none; -webkit-appearance: none;" placeholder="성명을 입력하세요">
+                    </div>
+                    
+                    <!-- 소속사 -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 4px;">소속사 <span style="color: #ef4444;">*</span></label>
+                        <input type="text" id="formCompany" style="width: 100%; padding: 14px 16px; border: 1px solid #d1d5db; border-radius: 12px; font-size: 16px; color: #111827; outline: none; -webkit-appearance: none;" placeholder="소속사를 입력하세요">
+                    </div>
+                    
+                    <!-- 직함 -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 4px;">직함 <span style="color: #ef4444;">*</span></label>
+                        <input type="text" id="formTitle" style="width: 100%; padding: 14px 16px; border: 1px solid #d1d5db; border-radius: 12px; font-size: 16px; color: #111827; outline: none; -webkit-appearance: none;" placeholder="직함을 입력하세요">
+                    </div>
+                    
+                    <!-- 연락처 -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 4px;">연락처 <span style="color: #ef4444;">*</span></label>
+                        <div style="display: flex; align-items: center; gap: 4px; width: 100%;">
+                            <span style="padding: 12px 8px; background: #f3f4f6; color: #374151; border-radius: 10px; font-weight: 500; font-size: 14px; flex-shrink: 0;">010</span>
+                            <input type="tel" id="formPhone1" inputmode="numeric" pattern="\d*" maxlength="4" style="width: 70px; min-width: 0; flex: 1; padding: 12px 8px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 16px; color: #111827; text-align: center; outline: none; -webkit-appearance: none;" placeholder="0000">
+                            <span style="color: #9ca3af; flex-shrink: 0;">-</span>
+                            <input type="tel" id="formPhone2" inputmode="numeric" pattern="\d*" maxlength="4" style="width: 70px; min-width: 0; flex: 1; padding: 12px 8px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 16px; color: #111827; text-align: center; outline: none; -webkit-appearance: none;" placeholder="0000">
+                        </div>
+                    </div>
+                    
+                    <!-- 추천인 -->
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 4px;">추천인</label>
+                        <input type="text" id="formRecommender" style="width: 100%; padding: 14px 16px; border: 1px solid #d1d5db; border-radius: 12px; font-size: 16px; color: #111827; outline: none; -webkit-appearance: none;" placeholder="추천인 (선택)">
+                    </div>
+                    
+                    <!-- 제출 버튼 -->
+                    <button type="button" onclick="submitForm(this)" style="width: 100%; background: #eab308; color: #111827; font-weight: 700; padding: 16px 24px; border-radius: 12px; border: none; font-size: 16px; box-shadow: 0 2px 8px rgba(234,179,8,0.3); cursor: pointer; -webkit-appearance: none; -webkit-tap-highlight-color: transparent;">
+                        제출하기
+                    </button>
+                </div>
+
+                <!-- 제출 완료 메시지 -->
+                <div id="submitSuccess" style="display: none; max-width: 400px; margin: 24px auto 0; background: white; border-radius: 16px; padding: 32px; text-align: center;">
+                    <div style="width: 64px; height: 64px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                        <svg style="width: 32px; height: 32px; color: #16a34a;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <h3 style="font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 12px;">제출되었습니다</h3>
+                    <p style="color: #4b5563; line-height: 1.6;">담당자가 세션참석 차 별도로<br><strong style="color: #1e3a8a;">'유선안내'</strong>를 드리겠습니다.</p>
+                </div>
+            </div>
+            <!-- 장식 원 -->
+            <div style="position: absolute; top: -64px; right: -64px; width: 192px; height: 192px; background: #1d4ed8; border-radius: 50%; opacity: 0.2;"></div>
+            <div style="position: absolute; bottom: -32px; left: -32px; width: 128px; height: 128px; background: #eab308; border-radius: 50%; opacity: 0.1;"></div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- AI시대 미래 고민 버튼 (아코디언) -->
+        <!-- ============================================ -->
+        <div style="margin-top: 32px; text-align: center;">
+            <button type="button" onclick="toggleOfflineSection()" style="width: 100%; max-width: 400px; background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white; font-weight: 700; padding: 18px 24px; border-radius: 16px; border: none; font-size: 16px; box-shadow: 0 4px 20px rgba(124,58,237,0.4); display: inline-flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; -webkit-appearance: none; -webkit-tap-highlight-color: transparent;">
+                <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                <span>AI시대에<br>미래를 고민하고 있다면</span>
+                <svg id="offlineArrow" style="width: 20px; height: 20px; transition: transform 0.3s;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- 오프라인 세션 섹션 (숨김) -->
+        <!-- ============================================ -->
+        <div id="offlineSection" class="accordion-content" style="margin-top: 0;">
+            <div style="padding-top: 32px;">
+                
+                <!-- 섹션 타이틀 -->
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                        <div style="height: 1px; background: #d1d5db; flex: 1; max-width: 60px;"></div>
+                        <h3 style="padding: 0 16px; font-size: 18px; font-weight: 900; color: #1e3a8a;">상위 1%를 위한 특별 오프라인 세션</h3>
+                        <div style="height: 1px; background: #d1d5db; flex: 1; max-width: 60px;"></div>
+                    </div>
+                    <p style="font-size: 13px; color: #6b7280; line-height: 1.6; max-width: 360px; margin: 0 auto;">
+                        * 아래 내용은 오프라인으로 120분 진행하며<br>
+                        &lt;AI시대&gt;에 미래 먹거리를 고민하는 분만 참여하여<br>주시기 바랍니다.<br>
+                        <span style="color: #1e3a8a; font-weight: 500;">(신청은 박신제 본부장에게 개별 신청)</span>
+                    </p>
+                </div>
+                
+                <!-- 9개 베네핏 카드 그리드 -->
+                <div style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 12px;">
+                    
+                    <!-- Benefit 1 -->
+                    <div class="benefit-card" style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #f3f4f6;">
+                        <div style="width: 44px; height: 44px; background: #dbeafe; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+                            <svg style="width: 22px; height: 22px; color: #1d4ed8;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        </div>
+                        <h4 class="card-title" style="color: #111827;">CEO 라포 형성</h4>
+                        <p class="card-desc">어떤 업종의 CEO와도 즉시 신뢰관계를 구축하고 전문적인 컨설팅을 시작할 수 있습니다.</p>
+                    </div>
+
+                    <!-- Benefit 2 -->
+                    <div class="benefit-card" style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #f3f4f6;">
+                        <div style="width: 44px; height: 44px; background: #dbeafe; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+                            <svg style="width: 22px; height: 22px; color: #1d4ed8;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        </div>
+                        <h4 class="card-title" style="color: #111827;">전문위원 타이틀</h4>
+                        <p class="card-desc">연구소 컨설팅 전문위원 Title을 통해 시장에서의 차별화된 경쟁력을 확보합니다.</p>
+                    </div>
+
+                    <!-- Benefit 3 -->
+                    <div class="benefit-card" style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #f3f4f6;">
+                        <div style="width: 44px; height: 44px; background: #dbeafe; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+                            <svg style="width: 22px; height: 22px; color: #1d4ed8;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"></path></svg>
+                        </div>
+                        <h4 class="card-title" style="color: #111827;">전천후 비즈니스 툴</h4>
+                        <p class="card-desc">업종과 규모를 불문하고 기업을 발굴하고 제안할 수 있는 강력한 Tool을 제공합니다.</p>
+                    </div>
+
+                    <!-- Benefit 4 -->
+                    <div class="benefit-card" style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #f3f4f6;">
+                        <div style="width: 44px; height: 44px; background: #dbeafe; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+                            <svg style="width: 22px; height: 22px; color: #1d4ed8;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                        </div>
+                        <h4 class="card-title" style="color: #111827;">지속적 접점 관리</h4>
+                        <p class="card-desc">단발성 만남이 아닌, 지속적으로 기업을 관리하고 유대감을 형성할 수 있는 프로세스입니다.</p>
+                    </div>
+
+                    <!-- Benefit 5 -->
+                    <div class="benefit-card" style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #f3f4f6;">
+                        <div style="width: 44px; height: 44px; background: #dbeafe; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+                            <svg style="width: 22px; height: 22px; color: #1d4ed8;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <h4 class="card-title" style="color: #111827;">네이밍 브랜딩 전략</h4>
+                        <p class="card-desc">네이버 인물정보 등록 지원을 통해 전문가로서의 디지털 신뢰도를 극대화합니다.</p>
+                    </div>
+
+                    <!-- Benefit 6 -->
+                    <div class="benefit-card" style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #f3f4f6;">
+                        <div style="width: 44px; height: 44px; background: #dbeafe; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+                            <svg style="width: 22px; height: 22px; color: #1d4ed8;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        </div>
+                        <h4 class="card-title" style="color: #111827;">특화 어프로치 스킬</h4>
+                        <p class="card-desc">부동산, 기업 신용등급 등 타인은 쉽게 접근하지 못하는 핵심 영역으로 상담을 주도합니다.</p>
+                    </div>
+
+                    <!-- Benefit 7 - 노란색 강조 -->
+                    <div class="benefit-card" style="background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); padding: 20px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 2px solid #fde047;">
+                        <div style="width: 44px; height: 44px; background: #fde047; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; color: #854d0e; font-weight: 700; font-size: 18px;">₩</div>
+                        <h4 class="card-title" style="color: #854d0e;">구독형 수수료 창출</h4>
+                        <p style="font-size: 13px; line-height: 1.5; color: #713f12; font-weight: 500;">연금처럼 평생 수령 가능한 구독경제 수수료(최소 월 300만 이상) 파이프라인을 구축합니다.</p>
+                    </div>
+
+                    <!-- Benefit 8 - 남색 강조 -->
+                    <div class="benefit-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(30,58,138,0.3); color: white;">
+                        <div style="width: 44px; height: 44px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+                            <svg style="width: 22px; height: 22px; color: #bfdbfe;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 21h6l-.75-4M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <h4 class="card-title" style="color: white;">디지털 사무실 보유</h4>
+                        <p style="font-size: 13px; line-height: 1.5; color: #bfdbfe;">자신만의 인터넷 플랫폼(디지털 사무실)을 보유하여 비대면 시대의 강력한 경쟁력을 갖춥니다.</p>
+                    </div>
+
+                    <!-- Benefit 9 - 파트너십 -->
+                    <div class="benefit-card" style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #f3f4f6; display: flex; flex-direction: column; justify-content: center;">
+                        <div style="border-left: 4px solid #1e3a8a; padding-left: 16px;">
+                            <p style="font-size: 11px; color: #2563eb; font-weight: 700; margin-bottom: 4px; letter-spacing: 1px;">STRATEGIC ALLIANCE</p>
+                            <h4 style="font-size: 18px; font-weight: 900; color: #111827; line-height: 1.3;">삼일회계법인 M&A 파트너십</h4>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+
+        <footer style="margin-top: 40px; text-align: center; color: #9ca3af; font-size: 12px;">
+            <p>&copy; 2025 (주)한국FP센터. All Rights Reserved.</p>
+            <p style="margin-top: 4px;">14년의 신뢰, 전문가를 만드는 전문가 집단</p>
+        </footer>
+    </main>
+
+<script>
+    // ============================================
+    // 구글 시트 설정
+    // ============================================
+    var GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbweaTxci2RHys_pk8A3cPUwps9zB8njF8lfJiUcfc4RI1etVzjLne9kQzH3mXQOwBhe/exec';
+    var GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1SPA1-hWABcRPUyNx_ApA98_2erL4F60zrv7pe0g6j0I/edit#gid=0';
+
+    // ============================================
+    // 신청 폼 토글
+    // ============================================
+    function toggleApplyForm() {
+        var form = document.getElementById('applyForm');
+        var arrow = document.getElementById('applyArrow');
+        var success = document.getElementById('submitSuccess');
+        
+        if (form.style.display === 'none' || form.style.display === '') {
+            form.style.display = 'block';
+            arrow.style.transform = 'rotate(180deg)';
+            success.style.display = 'none';
+            
+            // 카카오톡 인앱 브라우저 감지 및 안내 표시
+            showKakaoBanner();
+            
+            setTimeout(function() {
+                form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        } else {
+            form.style.display = 'none';
+            arrow.style.transform = 'rotate(0deg)';
+            closeKakaoBanner();
+        }
+    }
+
+    // ============================================
+    // 카카오톡 브라우저 안내
+    // ============================================
+    var kakaoShown = false;
+    function showKakaoBanner() {
+        if (kakaoShown) return;
+        var ua = navigator.userAgent.toLowerCase();
+        var isKakao = ua.indexOf('kakaotalk') > -1;
+        if (isKakao) {
+            var banner = document.getElementById('kakaoBanner');
+            var guide = document.getElementById('kakaoGuide');
+            var isIOS = /iphone|ipad|ipod/.test(ua);
+            
+            if (isIOS) {
+                guide.innerHTML = '우측 하단 <strong>⋮</strong> 또는 <strong>ᐧᐧᐧ</strong> → <strong>"Safari로 열기"</strong> 를 눌러주세요';
+            } else {
+                guide.innerHTML = '상단 <strong>URL 주소</strong>를 터치 → <strong>"다른 브라우저로 열기"</strong> 를 눌러주세요';
+            }
+            banner.style.display = 'block';
+            document.body.style.paddingTop = '100px';
+            kakaoShown = true;
+        }
+    }
+    
+    function closeKakaoBanner() {
+        document.getElementById('kakaoBanner').style.display = 'none';
+        document.body.style.paddingTop = '0';
+    }
+
+    // ============================================
+    // 오프라인 섹션 토글
+    // ============================================
+    function toggleOfflineSection() {
+        var section = document.getElementById('offlineSection');
+        var arrow = document.getElementById('offlineArrow');
+        
+        if (section.classList.contains('open')) {
+            section.classList.remove('open');
+            arrow.style.transform = 'rotate(0deg)';
+        } else {
+            section.classList.add('open');
+            arrow.style.transform = 'rotate(180deg)';
+            setTimeout(function() {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    }
+
+    // ============================================
+    // 폼 제출 (iOS 호환)
+    // ============================================
+    function submitForm(btn) {
+        var name = document.getElementById('formName').value.trim();
+        var company = document.getElementById('formCompany').value.trim();
+        var title = document.getElementById('formTitle').value.trim();
+        var phone1 = document.getElementById('formPhone1').value.trim();
+        var phone2 = document.getElementById('formPhone2').value.trim();
+        var recommender = document.getElementById('formRecommender').value.trim();
+
+        // 필수 입력 검증
+        if (!name) { alert('성명을 입력해주세요.'); document.getElementById('formName').focus(); return; }
+        if (!company) { alert('소속사를 입력해주세요.'); document.getElementById('formCompany').focus(); return; }
+        if (!title) { alert('직함을 입력해주세요.'); document.getElementById('formTitle').focus(); return; }
+        if (!phone1 || phone1.length < 3) { 
+            alert('연락처를 올바르게 입력해주세요.'); 
+            document.getElementById('formPhone1').focus();
+            return; 
+        }
+        if (!phone2 || phone2.length < 4) { 
+            alert('연락처를 올바르게 입력해주세요.'); 
+            document.getElementById('formPhone2').focus();
+            return; 
+        }
+
+        var phone = '010-' + phone1 + '-' + phone2;
+        
+        var formData = {
+            name: name,
+            company: company,
+            title: title,
+            phone: phone,
+            recommender: recommender || '-'
+        };
+
+        // 버튼 상태 변경
+        var originalText = btn.innerText;
+        btn.innerText = '제출 중...';
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+
+        // Google Apps Script로 전송
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        }).then(function() {
+            document.getElementById('applyForm').style.display = 'none';
+            document.getElementById('applyBtnWrap').style.display = 'none';
+            document.getElementById('submitSuccess').style.display = 'block';
+            document.getElementById('submitSuccess').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }).catch(function(error) {
+            console.error('전송 오류:', error);
+            alert('신청 중 오류가 발생했습니다. 다시 시도해주세요.');
+            btn.innerText = originalText;
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        });
+    }
+
+    // ============================================
+    // 관리자 로그인
+    // ============================================
+    function openAdminLogin() {
+        var modal = document.getElementById('adminModal');
+        modal.style.display = 'flex';
+        document.getElementById('adminId').value = '';
+        document.getElementById('adminPw').value = '';
+        document.getElementById('loginError').style.display = 'none';
+        setTimeout(function() {
+            document.getElementById('adminId').focus();
+        }, 100);
+    }
+
+    function closeAdminLogin() {
+        document.getElementById('adminModal').style.display = 'none';
+    }
+
+    function checkAdminLogin() {
+        var id = document.getElementById('adminId').value.trim();
+        var pw = document.getElementById('adminPw').value.trim();
+
+        if (id === 'admin' && pw === 'kfpc0808') {
+            closeAdminLogin();
+            window.open(GOOGLE_SHEET_URL, '_blank');
+        } else {
+            document.getElementById('loginError').style.display = 'block';
+            document.getElementById('adminPw').value = '';
+            document.getElementById('adminPw').focus();
+        }
+    }
+
+    // ============================================
+    // 이벤트 리스너
+    // ============================================
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            var modal = document.getElementById('adminModal');
+            if (modal.style.display === 'flex') {
+                checkAdminLogin();
+            }
+        }
+    });
+
+    document.getElementById('adminModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeAdminLogin();
+        }
+    });
+
+    // 연락처 입력 - 숫자만 & 자동 이동
+    document.getElementById('formPhone1').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '');
+        if (this.value.length >= 4) {
+            document.getElementById('formPhone2').focus();
+        }
+    });
+
+    document.getElementById('formPhone2').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+</script>
+
+</body>
+</html>
